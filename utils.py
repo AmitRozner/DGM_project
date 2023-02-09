@@ -2,6 +2,7 @@ import sklearn
 from nits.fc_model import *
 from scipy import stats
 import sklearn.metrics as metrics
+import matplotlib.pyplot as plt
 
 
 def list_str_to_list(s):
@@ -63,6 +64,7 @@ class Dataset:
         self.y_trn = y_trn
         self.y_tst = y_tst
 
+
 def permute_data(dataset):
     d = dataset.trn.x.shape[1]
     train_idx = len(dataset.trn.x)
@@ -75,6 +77,7 @@ def permute_data(dataset):
     assert np.allclose(np.matmul(permuted_x, P.T), x)
 
     return Dataset(permuted_x.astype(np.float), train_idx=train_idx, val_idx=val_idx), P.astype(np.float)
+
 
 def calc_auc_score(pred_vec, Y):
     TN_list = []
@@ -103,6 +106,7 @@ def calc_auc_score(pred_vec, Y):
 
     return auc
 
+
 class AverageMeter(object):
     """Computes and stores the average and current value"""
 
@@ -126,3 +130,31 @@ class AverageMeter(object):
     def __str__(self):
         fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
         return fmtstr.format(**self.__dict__)
+
+
+def plot_save_fig(x_val, y_val, xlabel, ylabel, title, figname):
+    plt.plot(x_val, y_val)
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.savefig(figname)
+
+def normalize_dataset(data, normalize_dataset='zscore'):
+    trn_mean = np.mean(data.trn.x, axis=0)
+    trn_std = np.std(data.trn.x, axis=0)
+
+    if np.any(trn_std < 1e-7):
+        # Remove any column which has std of zero
+        col_to_keep = trn_std >= 1e-7
+        trn_mean = trn_mean[col_to_keep]
+        trn_std = trn_std[col_to_keep]
+        data.trn.x = data.trn.x[:, col_to_keep]
+        data.tst.x = data.tst.x[:, col_to_keep]
+        data.val.x = data.val.x[:, col_to_keep]
+
+    if normalize_dataset == 'zscore':
+        data.trn.x = (data.trn.x - trn_mean) / trn_std
+        data.tst.x = (data.tst.x - trn_mean) / trn_std
+        data.val.x = (data.val.x - trn_mean) / trn_std
+
+    return data

@@ -295,7 +295,7 @@ class NICE(nn.Module):
             log-likelihood of input.
         """
         z, log_det_J = self.f(x)
-        log_det_J -= np.log(256) * self.in_out_dim  # log det for rescaling from [0.256] (after dequantization) to [0,1]
+        log_det_J -= self.in_out_dim  #np.log(256) * log det for rescaling from [0.256] (after dequantization) to [0,1]
         log_ll = torch.sum(self.prior.log_prob(z.cpu()), dim=1).to(self.device)
         return log_ll + log_det_J
 

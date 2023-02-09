@@ -20,16 +20,20 @@ class Model(nn.Module):
         self.encoder = nn.Sequential(
             nn.Linear(input_dim, int(input_dim // 1.5)),
             nn.ReLU(True),
+            nn.BatchNorm1d(int(input_dim // 1.5)),
             nn.Linear(int(input_dim // 1.5), int(input_dim // 2)),
             nn.ReLU(True),
+            nn.BatchNorm1d(int(input_dim // 2)),
             nn.Linear(int(input_dim // 2), int(input_dim // 3))
         )
 
         self.decoder = nn.Sequential(
             nn.Linear(int(input_dim // 3), int(input_dim // 2)),
             nn.ReLU(True),
+            nn.BatchNorm1d(int(input_dim // 2)),
             nn.Linear(int(input_dim // 2), int(input_dim // 1.5)),
             nn.ReLU(True),
+            nn.BatchNorm1d(int(input_dim // 1.5)),
             nn.Linear(int(input_dim // 1.5), input_dim)
         )
 

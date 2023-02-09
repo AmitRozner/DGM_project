@@ -1,10 +1,13 @@
 import argparse
 import time
+
+import matplotlib.pyplot as plt
 import torch
 import numpy as np
 from nits.model import *
 from nits.fc_model import *
-from utils import create_batcher, list_str_to_list
+from utils import create_batcher, list_str_to_list, plot_save_fig
+
 
 def train_nits(args, data):
     np.random.seed(args.seed)
@@ -66,6 +69,8 @@ def train_nits(args, data):
     max_val_ll = -np.inf
     patience = args.patience
     keep_training = True
+    train_ll_list = []
+    ema_ll_list = []
     while keep_training:
         model.train()
         for i, x in enumerate(create_batcher(data.trn.x, batch_size=args.batch_size)):
@@ -133,13 +138,17 @@ def train_nits(args, data):
                 val_ll,
                 test_ll,
                 lr))
-
+            train_ll_list.append(-train_ll.detach().cpu().numpy())
+            ema_ll_list.append(ema_test_ll)
             time_ = time.time()
             train_ll = 0.
 
         if epoch % (print_every * 10) == 0:
             print(args)
 
+    plot_save_fig(range(0, epoch, print_every), train_ll_list, 'epoch', 'train log like', 'NITS Train Log Likelihood', 'NITS_train_ll.png')
+    plt.clf()
+    # plot_save_fig(range(0, epoch, 10), ema_ll_list, 'epoch', 'EMA log like', 'NITS EMA Test Log Likelihood', 'NITS_ema_test_ll.png')
     log_like = model.model.forward_vec(torch.tensor(data.tst.x, device=device).float())
     score_all = log_like.detach().cpu().numpy()
     u, s = np.linalg.eigh(np.cov(score_all.T))
@@ -147,6 +156,8 @@ def train_nits(args, data):
     ll_score = np.sum(ll_t, axis=1)
     ll_score = ll_score if np.cov(score_all.sum(axis=1), ll_score)[0, 1] > 0 else -ll_score
     return ll_score
+
+
 def __main__():
     parser = argparse.ArgumentParser()
 

@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 import nice
 from utils import create_batcher
 
-def train(flow, dataset, optimizer, train_ll_meter):
+def train(flow, dataset, optimizer, train_ll_meter, batch_size):
     flow.train()  # set to training mode
 
-    for i, inputs in enumerate(create_batcher(dataset.trn.x, batch_size=32)):
+    for i, inputs in enumerate(create_batcher(dataset.trn.x, batch_size=batch_size)):
         optimizer.zero_grad()
         ll = flow(inputs.to('cuda:0')).mean()
         (-ll).backward()
@@ -26,9 +26,9 @@ def test(flow, dataset):
     flow.eval()  # set to inference mode
     log_like = []
     with torch.no_grad():
-        for i, inputs in enumerate(create_batcher(dataset.tst.x, batch_size=32)):
+        for i, inputs in enumerate(create_batcher(dataset.tst.x, batch_size=512)):
             ll = flow(inputs.to('cuda:0'))
-            log_like.append(ll.detach().cpu().numpy())
+            log_like.append(-ll.detach().cpu().numpy())
 
     return np.concatenate(log_like)
 
