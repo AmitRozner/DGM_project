@@ -7,8 +7,8 @@ def train_ae(args, dataset):
     device = 'cuda:' + args.gpu if args.gpu else 'cpu'
     ae = Model(input_dim=dataset.trn.x.shape[-1], device=device).to(device)
     optimizer = torch.optim.Adam(ae.parameters(), lr=0.003, weight_decay=0.03)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=int((dataset.trn.x.shape[0] // args.ae_batch_size)
-                                                                         * (args.epochs // 2)), gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=max(int((dataset.trn.x.shape[0] // args.ae_batch_size)
+                                                                         * (args.epochs // 2)), 50), gamma=0.1)
     train_loss_meter = AverageMeter(f'train_loss', ':6.3f')
     loss_list = []
     print_every = 10
