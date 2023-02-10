@@ -10,9 +10,6 @@ from utils import create_batcher, list_str_to_list, plot_save_fig
 
 
 def train_nits(args, data):
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-
     device = 'cuda:' + args.gpu if args.gpu else 'cpu'
     args.patience = args.patience if args.patience >= 0 else 50
     args.dropout = args.dropout if args.dropout >= 0.0 else 0.0
@@ -108,7 +105,7 @@ def train_nits(args, data):
             else:
                 patience -= 1
 
-            if patience == 0:
+            if patience == 0 or args.epochs <= epoch:
                 print("Patience reached zero. max_val_ll stayed at {:.3f} for {:d} iterations.".format(max_val_ll,
                                                                                                        args.patience))
                 keep_training = False
@@ -163,7 +160,6 @@ def __main__():
 
     parser.add_argument('-d', '--dataset', type=str, default='cardio')
     parser.add_argument('-g', '--gpu', type=str, default='')
-    parser.add_argument('-s', '--seed', type=int, default=1)
     parser.add_argument('-b', '--batch_size', type=int, default=4)
     parser.add_argument('-hi', '--hidden_dim', type=int, default=1024)
     parser.add_argument('-nr', '--n_residual_blocks', type=int, default=2)

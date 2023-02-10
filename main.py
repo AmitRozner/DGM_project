@@ -7,13 +7,13 @@ from utils import Dataset, list_str_to_list, normalize_dataset
 from nits.train_nits import train_nits
 from autoencoder.train_ae import train_ae
 from nice.train_nice import train_nice
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-d', '--dataset', type=str, default='cardio')
 parser.add_argument('-g', '--gpu', type=str, default='0')
-parser.add_argument('-s', '--seed', type=int, default=1)
-parser.add_argument('-b', '--batch_size', type=int, default=512)
+parser.add_argument('-b', '--batch_size', type=int, default=32)
 parser.add_argument('--ae_batch_size', type=int, default=32)
 parser.add_argument('--nice_batch_size', type=int, default=32)
 parser.add_argument('-hi', '--hidden_dim', type=int, default=1024)
@@ -29,7 +29,7 @@ parser.add_argument('-p', '--dropout', type=float, default=-1)
 parser.add_argument('-rc', '--add_residual_connections', type=bool, default=False)
 parser.add_argument('-bm', '--bound_multiplier', type=float, default=1.0)
 parser.add_argument('-pe', '--permute_data', action='store_true')
-parser.add_argument('--epochs', type=int, default=500)
+parser.add_argument('--epochs', type=int, default=300)
 parser.add_argument('--normalize_data', action='store_false')
 
 args = parser.parse_args()
@@ -55,18 +55,24 @@ def main():
     nits_auc_score = {}
     ae_auc_score = {}
     nice_auc_score = {}
-    for ds_name, dataset in datasets.items():
+    NUM_RANDOM_SEEDS = 3
+    for ds_name, dataset in tqdm(datasets.items()):
         args.dataset = ds_name
-        nits_score = train_nits(args, dataset)
-        nits_auc_score[ds_name] = sklearn.metrics.roc_auc_score(dataset.y_tst, nits_score)
-        ae_score = train_ae(args, dataset)
-        ae_auc_score[ds_name] = sklearn.metrics.roc_auc_score(dataset.y_tst, ae_score)
-        nice_score = train_nice(args, dataset)
-        nice_auc_score[ds_name] = sklearn.metrics.roc_auc_score(dataset.y_tst, nice_score)
+        nits_auc_score[ds_name] = []
+        ae_auc_score[ds_name] = []
+        nice_auc_score[ds_name] = []
 
-    print(f'nits_auc_score: {nits_auc_score}')
-    print(f'ae_auc_score: {ae_auc_score}')
-    print(f'nice_auc_score: {nice_auc_score}')
+        for _ in range(NUM_RANDOM_SEEDS):
+            nits_score = train_nits(args, dataset)
+            nits_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, nits_score))
+            ae_score = train_ae(args, dataset)
+            ae_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, ae_score))
+            nice_score = train_nice(args, dataset)
+            nice_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, nice_score))
+
+        print(f'nits_auc_score {ds_name}: {nits_auc_score[ds_name]} avg:{np.mean(nits_auc_score[ds_name])}')
+        print(f'ae_auc_score {ds_name}: {ae_auc_score[ds_name]} avg:{np.mean(ae_auc_score[ds_name])}')
+        print(f'nice_auc_score {ds_name}: {nice_auc_score[ds_name]} avg:{np.mean(nice_auc_score[ds_name])}')
 
 
 if __name__ == "__main__":
