@@ -63,7 +63,10 @@ def main():
         ae_auc_score[ds_name] = sklearn.metrics.roc_auc_score(dataset.y_tst, ae_score)
         nice_score = train_nice(args, dataset)
         nice_auc_score[ds_name] = sklearn.metrics.roc_auc_score(dataset.y_tst, nice_score)
-    a = 1
+
+    print(f'nits_auc_score: {nits_auc_score}')
+    print(f'ae_auc_score: {ae_auc_score}')
+    print(f'nice_auc_score: {nice_auc_score}')
 
 
 if __name__ == "__main__":
