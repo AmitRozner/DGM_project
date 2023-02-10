@@ -18,28 +18,34 @@ class Model(nn.Module):
         self.device = device
         self.input_dim = input_dim
         self.encoder = nn.Sequential(
-            nn.Linear(input_dim, int(input_dim // 1.5)),
-            nn.ReLU(True),
-            nn.BatchNorm1d(int(input_dim // 1.5)),
-            nn.Linear(int(input_dim // 1.5), int(input_dim // 2)),
-            nn.ReLU(True),
-            nn.BatchNorm1d(int(input_dim // 2)),
-            nn.Linear(int(input_dim // 2), int(input_dim // 3))
+            nn.Linear(input_dim, input_dim),
+            nn.BatchNorm1d(input_dim),
+            nn.Linear(input_dim, 16),
+            nn.SiLU(True),
+            nn.Dropout(0.2),
+            nn.BatchNorm1d(16),
+            nn.Linear(16, 4),
+            nn.SiLU(True),
+            nn.Dropout(0.2)
         )
 
         self.decoder = nn.Sequential(
-            nn.Linear(int(input_dim // 3), int(input_dim // 2)),
-            nn.ReLU(True),
-            nn.BatchNorm1d(int(input_dim // 2)),
-            nn.Linear(int(input_dim // 2), int(input_dim // 1.5)),
-            nn.ReLU(True),
-            nn.BatchNorm1d(int(input_dim // 1.5)),
-            nn.Linear(int(input_dim // 1.5), input_dim)
+            nn.BatchNorm1d(4),
+            nn.Linear(4, 16),
+            nn.SiLU(True),
+            nn.Dropout(0.2),
+            nn.BatchNorm1d(16),
+            nn.Linear(16, input_dim),
+            nn.SiLU(True),
+            nn.Dropout(0.2),
+            nn.Linear(input_dim, input_dim),
+            nn.SiLU(True)
         )
 
     def loss(self, x, recon):
         ce_loss = F.mse_loss(recon, x, reduction='mean')
-        return ce_loss
+        # kl_loss = F.kl_div(F.log_softmax(x), F.softmax(recon), reduction='batchmean')
+        return ce_loss #+ kl_loss
 
     def forward(self, x):
         x_latent = self.encoder(x)

@@ -26,9 +26,9 @@ def test(flow, dataset):
     flow.eval()  # set to inference mode
     log_like = []
     with torch.no_grad():
-        for i, inputs in enumerate(create_batcher(dataset.tst.x, batch_size=512)):
-            ll = flow(inputs.to('cuda:0'))
-            log_like.append(-ll.detach().cpu().numpy())
+        inputs = torch.tensor(dataset.tst.x,device='cuda:0').float()
+        ll = flow(inputs.to('cuda:0'))
+        log_like.append(-ll.detach().cpu().numpy())
 
     return np.concatenate(log_like)
 

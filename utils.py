@@ -3,6 +3,7 @@ from nits.fc_model import *
 from scipy import stats
 import sklearn.metrics as metrics
 import matplotlib.pyplot as plt
+from pyod.utils.utility import standardizer
 
 
 def list_str_to_list(s):
@@ -79,34 +80,6 @@ def permute_data(dataset):
     return Dataset(permuted_x.astype(np.float), train_idx=train_idx, val_idx=val_idx), P.astype(np.float)
 
 
-def calc_auc_score(pred_vec, Y):
-    TN_list = []
-    FN_list = []
-    TP_list = []
-    FP_list = []
-    min_val = np.min(pred_vec)
-    max_val = np.max(pred_vec)
-    t_vec = np.linspace(min_val, max_val, 100)
-    num_of_anomalies = int(Y.sum())
-
-    for thresh in t_vec:
-        TP = sum(pred_vec[np.where(Y == 1)[0]] <= thresh)
-        FP = sum(pred_vec[np.where(Y == 0)[0]] <= thresh)
-        TN = sum(pred_vec[np.where(Y == 0)[0]] > thresh)
-        FN = sum(pred_vec[np.where(Y == 1)[0]] > thresh)
-        TN_list.append(TN)
-        FN_list.append(FN)
-        TP_list.append(TP)
-        FP_list.append(FP)
-
-    clean_samples = np.sum(Y == 0)
-    FP_rate = np.array(FP_list) / clean_samples
-    TP_rate = np.array(TP_list) / num_of_anomalies
-    auc = metrics.auc(FP_rate, TP_rate)
-
-    return auc
-
-
 class AverageMeter(object):
     """Computes and stores the average and current value"""
 
@@ -139,7 +112,8 @@ def plot_save_fig(x_val, y_val, xlabel, ylabel, title, figname):
     plt.ylabel(ylabel)
     plt.savefig(figname)
 
-def normalize_dataset(data, normalize_dataset='zscore'):
+
+def normalize_dataset(data, normalize_dataset='pyod'):
     trn_mean = np.mean(data.trn.x, axis=0)
     trn_std = np.std(data.trn.x, axis=0)
 
@@ -156,5 +130,12 @@ def normalize_dataset(data, normalize_dataset='zscore'):
         data.trn.x = (data.trn.x - trn_mean) / trn_std
         data.tst.x = (data.tst.x - trn_mean) / trn_std
         data.val.x = (data.val.x - trn_mean) / trn_std
-
+    elif normalize_dataset == 'whiten':
+        trn_max = np.max(np.abs(data.trn.x), axis=0)
+        trn_min = np.min(np.abs(data.trn.x), axis=0)
+        data.trn.x = (data.trn.x - trn_min) / (trn_max - trn_min)
+        data.val.x = (data.val.x - trn_min) / (trn_max - trn_min)
+        data.tst.x = (data.tst.x - trn_min) / (trn_max - trn_min)
+    elif normalize_dataset == 'pyod':
+        data.trn.x, data.tst.x = standardizer(data.trn.x, data.tst.x)
     return data

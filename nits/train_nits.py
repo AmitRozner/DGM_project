@@ -14,7 +14,7 @@ def train_nits(args, data):
     torch.manual_seed(args.seed)
 
     device = 'cuda:' + args.gpu if args.gpu else 'cpu'
-    args.patience = args.patience if args.patience >= 0 else 10
+    args.patience = args.patience if args.patience >= 0 else 50
     args.dropout = args.dropout if args.dropout >= 0.0 else 0.0
     print(args)
 
@@ -154,7 +154,7 @@ def train_nits(args, data):
     u, s = np.linalg.eigh(np.cov(score_all.T))
     ll_t = score_all @ s[:, -1:]
     ll_score = np.sum(ll_t, axis=1)
-    ll_score = ll_score if np.cov(score_all.sum(axis=1), ll_score)[0, 1] > 0 else -ll_score
+    ll_score = -ll_score if np.cov(score_all.sum(axis=1), ll_score)[0, 1] > 0 else ll_score
     return ll_score
 
 

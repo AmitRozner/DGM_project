@@ -23,9 +23,8 @@ def test(ae, dataset):
     ae.eval()  # set to inference mode
     l1_loss = []
     with torch.no_grad():
-        for i, x_orig in enumerate(create_batcher(dataset.tst.x, batch_size=512)):
-            x_orig = x_orig.to(ae.device)
-            x_recon = ae(x_orig)
-            l1_loss.append(F.mse_loss(x_orig/x_orig.max(), x_recon/x_recon.max(), reduction='none').mean(-1).detach().cpu().numpy())
+        x_orig = torch.tensor(dataset.tst.x, device=ae.device).float()
+        x_recon = ae(x_orig)
+        l1_loss.append(np.sqrt(np.sum(np.square(x_orig.detach().cpu().numpy() - x_recon.detach().cpu().numpy()), axis=1)))
 
     return np.concatenate(l1_loss)
