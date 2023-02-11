@@ -113,7 +113,7 @@ def plot_save_fig(x_val, y_val, xlabel, ylabel, title, figname):
     plt.savefig(figname)
 
 
-def normalize_dataset(data, normalize_dataset='pyod'):
+def normalize_dataset(data, normalize_type='pyod'):
     trn_mean = np.mean(data.trn.x, axis=0)
     trn_std = np.std(data.trn.x, axis=0)
 
@@ -126,16 +126,16 @@ def normalize_dataset(data, normalize_dataset='pyod'):
         data.tst.x = data.tst.x[:, col_to_keep]
         data.val.x = data.val.x[:, col_to_keep]
 
-    if normalize_dataset == 'zscore':
+    if normalize_type == 'zscore':
         data.trn.x = (data.trn.x - trn_mean) / trn_std
         data.tst.x = (data.tst.x - trn_mean) / trn_std
         data.val.x = (data.val.x - trn_mean) / trn_std
-    elif normalize_dataset == 'whiten':
+    elif normalize_type == 'whiten':
         trn_max = np.max(np.abs(data.trn.x), axis=0)
         trn_min = np.min(np.abs(data.trn.x), axis=0)
         data.trn.x = (data.trn.x - trn_min) / (trn_max - trn_min)
         data.val.x = (data.val.x - trn_min) / (trn_max - trn_min)
         data.tst.x = (data.tst.x - trn_min) / (trn_max - trn_min)
-    elif normalize_dataset == 'pyod':
+    elif normalize_type == 'pyod':
         data.trn.x, data.tst.x = standardizer(data.trn.x, data.tst.x)
     return data

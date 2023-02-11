@@ -6,6 +6,7 @@ import argparse
 from utils import Dataset, list_str_to_list, normalize_dataset
 from nits.train_nits import train_nits
 from autoencoder.train_ae import train_ae
+from autoencoder.train_vae import train_vae
 from nice.train_nice import train_nice
 from tqdm import tqdm
 
@@ -31,37 +32,39 @@ parser.add_argument('-bm', '--bound_multiplier', type=float, default=1.0)
 parser.add_argument('-pe', '--permute_data', action='store_true')
 parser.add_argument('--epochs', type=int, default=300)
 parser.add_argument('--normalize_data', action='store_false')
+parser.add_argument('--normalize_type', type=str, default='pyod')
 
 args = parser.parse_args()
 
 
-def get_datasets(normalize=False):
+def get_datasets(args, normalize=False):
     datasets = {}
     d_in = scipy.io.loadmat('./datasets/cardio.mat')
     Y = d_in['y']
     datasets['cardio'] = Dataset(d_in['X'].astype(np.float), Y.T[0])
     if normalize:
-        datasets['cardio'] = normalize_dataset(datasets['cardio'])
+        datasets['cardio'] = normalize_dataset(datasets['cardio'], normalize_type=args.normalize_type)
     d_in = scipy.io.loadmat('./datasets/ionosphere.mat')
     Y = d_in['y']
     datasets['ionosphere'] = Dataset(d_in['X'].astype(np.float), Y.T[0])
     if normalize:
-        datasets['ionosphere'] = normalize_dataset(datasets['ionosphere'])
+        datasets['ionosphere'] = normalize_dataset(datasets['ionosphere'], normalize_type=args.normalize_type)
     return datasets
 
 
 def main():
-    datasets = get_datasets(args.normalize_data)
+    datasets = get_datasets(args, args.normalize_data)
     nits_auc_score = {}
     ae_auc_score = {}
     nice_auc_score = {}
+    vae_auc_score = {}
     NUM_RANDOM_SEEDS = 3
     for ds_name, dataset in tqdm(datasets.items()):
         args.dataset = ds_name
         nits_auc_score[ds_name] = []
         ae_auc_score[ds_name] = []
         nice_auc_score[ds_name] = []
-
+        vae_auc_score[ds_name] = []
         for _ in range(NUM_RANDOM_SEEDS):
             nits_score = train_nits(args, dataset)
             nits_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, nits_score))
@@ -69,11 +72,14 @@ def main():
             ae_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, ae_score))
             nice_score = train_nice(args, dataset)
             nice_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, nice_score))
+            vae_score = train_vae(args, dataset)
+            vae_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, vae_score))
 
         print(f'nits_auc_score {ds_name}: {nits_auc_score[ds_name]} avg:{np.mean(nits_auc_score[ds_name])}')
         print(f'ae_auc_score {ds_name}: {ae_auc_score[ds_name]} avg:{np.mean(ae_auc_score[ds_name])}')
         print(f'nice_auc_score {ds_name}: {nice_auc_score[ds_name]} avg:{np.mean(nice_auc_score[ds_name])}')
 
+        print(f'vae_auc_score {ds_name}: {vae_auc_score[ds_name]} avg:{np.mean(vae_auc_score[ds_name])}')
 
 if __name__ == "__main__":
     main()
