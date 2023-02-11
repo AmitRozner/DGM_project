@@ -33,6 +33,7 @@ parser.add_argument('-pe', '--permute_data', action='store_true')
 parser.add_argument('--epochs', type=int, default=300)
 parser.add_argument('--normalize_data', action='store_false')
 parser.add_argument('--normalize_type', type=str, default='pyod')
+parser.add_argument('--use_mod_nits_loss', action='store_false')
 
 args = parser.parse_args()
 
@@ -72,13 +73,14 @@ def main():
             ae_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, ae_score))
             nice_score = train_nice(args, dataset)
             nice_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, nice_score))
+            ae_score = train_vae(args, dataset)
+            ae_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, ae_score))
             vae_score = train_vae(args, dataset)
             vae_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, vae_score))
 
         print(f'nits_auc_score {ds_name}: {nits_auc_score[ds_name]} avg:{np.mean(nits_auc_score[ds_name])}')
         print(f'ae_auc_score {ds_name}: {ae_auc_score[ds_name]} avg:{np.mean(ae_auc_score[ds_name])}')
         print(f'nice_auc_score {ds_name}: {nice_auc_score[ds_name]} avg:{np.mean(nice_auc_score[ds_name])}')
-
         print(f'vae_auc_score {ds_name}: {vae_auc_score[ds_name]} avg:{np.mean(vae_auc_score[ds_name])}')
 
 if __name__ == "__main__":

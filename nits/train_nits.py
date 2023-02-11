@@ -73,7 +73,11 @@ def train_nits(args, data):
         for i, x in enumerate(create_batcher(data.trn.x, batch_size=args.batch_size)):
             log_like = model(torch.tensor(x, device=device).float())
             optim.zero_grad()
-            (-log_like.mean() + 1 * ((log_like - log_like.mean(dim=0)) ** 2).mean()).backward()
+            if args.use_mod_nits_loss:
+                (-log_like.mean() + 1 * ((log_like - log_like.mean(dim=0)) ** 2).mean()).backward()
+            else:
+                (-log_like.sum()).backward()
+
             train_ll += log_like.mean().cpu()
             optim.step()
             scheduler.step()
@@ -147,11 +151,14 @@ def train_nits(args, data):
     plt.clf()
     # plot_save_fig(range(0, epoch, 10), ema_ll_list, 'epoch', 'EMA log like', 'NITS EMA Test Log Likelihood', 'NITS_ema_test_ll.png')
     log_like = model.model.forward_vec(torch.tensor(data.tst.x, device=device).float())
-    score_all = log_like.detach().cpu().numpy()
-    u, s = np.linalg.eigh(np.cov(score_all.T))
-    ll_t = score_all @ s[:, -1:]
-    ll_score = np.sum(ll_t, axis=1)
-    ll_score = -ll_score if np.cov(score_all.sum(axis=1), ll_score)[0, 1] > 0 else ll_score
+    if args.use_mod_nits_loss:
+        score_all = log_like.detach().cpu().numpy()
+        u, s = np.linalg.eigh(np.cov(score_all.T))
+        ll_t = score_all @ s[:, -1:]
+        ll_score = np.sum(ll_t, axis=1)
+        ll_score = -ll_score if np.cov(score_all.sum(axis=1), ll_score)[0, 1] > 0 else ll_score
+    else:
+        ll_score = -log_like.detach().cpu().numpy().sum(axis=1)
     return ll_score
 
 
