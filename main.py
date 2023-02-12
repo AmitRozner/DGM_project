@@ -40,16 +40,19 @@ args = parser.parse_args()
 
 def get_datasets(args, normalize=False):
     datasets = {}
-    d_in = scipy.io.loadmat('./datasets/cardio.mat')
+    datasets = get_single_ds(datasets, args, normalize, ds_name='cardio')
+    datasets = get_single_ds(datasets, args, normalize, ds_name='ionosphere')
+    datasets = get_single_ds(datasets, args, normalize, ds_name='breastw')
+    return datasets
+
+
+def get_single_ds(datasets, args, normalize, ds_name):
+
+    d_in = scipy.io.loadmat(f'./datasets/{ds_name}.mat')
     Y = d_in['y']
-    datasets['cardio'] = Dataset(d_in['X'].astype(np.float), Y.T[0])
+    datasets[ds_name] = Dataset(d_in['X'].astype(np.float), Y.T[0])
     if normalize:
-        datasets['cardio'] = normalize_dataset(datasets['cardio'], normalize_type=args.normalize_type)
-    d_in = scipy.io.loadmat('./datasets/ionosphere.mat')
-    Y = d_in['y']
-    datasets['ionosphere'] = Dataset(d_in['X'].astype(np.float), Y.T[0])
-    if normalize:
-        datasets['ionosphere'] = normalize_dataset(datasets['ionosphere'], normalize_type=args.normalize_type)
+        datasets[ds_name] = normalize_dataset(datasets[ds_name], normalize_type=args.normalize_type)
     return datasets
 
 
@@ -73,8 +76,6 @@ def main():
             ae_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, ae_score))
             nice_score = train_nice(args, dataset)
             nice_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, nice_score))
-            ae_score = train_vae(args, dataset)
-            ae_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, ae_score))
             vae_score = train_vae(args, dataset)
             vae_auc_score[ds_name].append(sklearn.metrics.roc_auc_score(dataset.y_tst, vae_score))
 
